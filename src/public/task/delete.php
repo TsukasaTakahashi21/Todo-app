@@ -1,42 +1,32 @@
 <?php
 session_start();
+require_once '../../vendor/autoload.php';
+require_once '../../config/database.php';
 
-$dbUserName = 'root';
-$dbPassword = 'password';
-$pdo = new PDO(
-    'mysql:host=mysql; dbname=todo; charset=utf8',
-    $dbUserName,
-    $dbPassword,
-);
+use App\Infrastructure\Persistence\TaskRepository;
+use App\UseCase\Interactor\Task\DeleteTaskUseCase;
+use App\Presentation\Controller\Task\DeleteTaskController;
+use App\Domain\ValueObject\Task\TaskId;
+use App\Infrastructure\Dao\TaskDao;
 
-if (!isset($_GET['id'])) {
-  header('Location: ../../../index.php');
-  exit();
-}
 
-$id = $_GET['id'];
+$pdo = getPdo();
+$taskDao = new TaskDao($pdo); 
+$taskRepository = new TaskRepository($taskDao);
+
 $errors = [];
 
-// タスクで使用されているカテゴリの確認
-$sql = 'SELECT COUNT(*) as count FROM tasks WHERE category_id = :id';
-$statement = $pdo->prepare($sql);
-$statement->bindValue(':id', $id, PDO::PARAM_INT);
-$statement->execute();
-$count = $statement->fetch(PDO::FETCH_ASSOC)['count'];
+$taskId = isset($_GET['id']) ? ($_GET['id']) : null;
 
-if ($count > 0) {
-  $errors[] = '現在タスクで使用されているので削除できません';
-} else {
-  $sql = 'DELETE FROM tasks WHERE id = :id';
-  $statement = $pdo->prepare($sql);
-  $statement->bindValue(':id', $id, PDO::PARAM_INT);
-  $statement->execute();
-}
+$deleteTaskUseCase = new DeleteTaskUseCase($taskRepository);
+$controller = new DeleteTaskController($deleteTaskUseCase);
+$presenter = $controller->delete($taskId);
+
+$errors = $presenter->present()['errors'];
 
 if (!empty($errors)) {
   $_SESSION['errors'] = $errors;
 }
 
-header('Location: ../../../index.php');
+header('Location: ../index.php');
 exit();
-?>

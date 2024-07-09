@@ -6,7 +6,6 @@ require_once '../../config/database.php';
 use App\Infrastructure\Persistence\TaskRepository;
 use App\UseCase\Interactor\Task\DeleteTaskUseCase;
 use App\Presentation\Controller\Task\DeleteTaskController;
-use App\Domain\ValueObject\Task\TaskId;
 use App\Infrastructure\Dao\TaskDao;
 
 
@@ -30,3 +29,4 @@ if (!empty($errors)) {
 
 header('Location: ../index.php');
 exit();
+

@@ -22,5 +22,3 @@ class DeleteTaskController
     return new DeleteTaskPresenter($output);
   }
 }
-
-

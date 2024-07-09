@@ -25,4 +25,4 @@ class DeleteTaskOutput
         return $this->errors;
     }
 }
-?>
+

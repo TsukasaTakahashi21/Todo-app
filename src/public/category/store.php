@@ -1,33 +1,36 @@
 <?php
 session_start();
-$dbUserName = 'root';
-$dbPassword = 'password';
-$pdo = new PDO(
-    'mysql:host=mysql; dbname=todo; charset=utf8',
-    $dbUserName,
-    $dbPassword,
-);
+require_once '../../vendor/autoload.php';
+require_once '../../config/database.php';
 
-$errors = [];
+use App\Infrastructure\Persistence\CategoryRepository;
+use App\UseCase\Interactor\Category\AddCategoryUseCase;
+use App\Presentation\Controller\Category\AddCategoryController;
+use App\Presentation\Presenter\Category\AddCategoryPresenter;
+use App\Infrastructure\Dao\CategoryDao;
+use App\UseCase\Input\Category\AddCategoryInput;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $category_name = isset($_POST['category_name']) ? $_POST['category_name'] : '';
-  $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
+$pdo = getPdo();
+$categoryDao = new CategoryDao($pdo);
+$categoryRepository = new CategoryRepository($categoryDao);
+$addCategoryUseCase = new AddCategoryUseCase($categoryRepository);
+$controller = new AddCategoryController($addCategoryUseCase);
 
-  if(empty($category_name)) {
-    $errors[] = 'カテゴリー名が入力されていません';
-  }
-  // カテゴリの新規登録
-  if (empty($errors)) {
-    $sql = 'INSERT INTO categories (name, user_id) VALUES (:name, :user_id)';
-    $statement  = $pdo->prepare($sql);
-    $statement->bindValue(':name', $category_name, PDO::PARAM_STR);
-    $statement->bindValue(':user_id', $user_id, PDO::PARAM_INT);
-    $statement->execute();
-  } else {
-    $_SESSION['errors'] = $errors;
-  }
+$userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+if ($userId === null) {
+  $_SESSION['errors'] = ['ユーザーIDが取得できませんでした。ログインしてください。'];
   header('Location: index.php');
   exit();
 }
+
+
+$request = [
+  'name' =>$_POST['category_name'], 
+  'user_id' =>$userId
+];
+
+$controller->store($request);
+header('Location: index.php');
+exit();
+
 ?>

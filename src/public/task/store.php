@@ -1,52 +1,53 @@
 <?php
 session_start();
-$dbUserName = 'root';
-$dbPassword = 'password';
-$pdo = new PDO('mysql:host=mysql; dbname=todo; charset=utf8', $dbUserName, $dbPassword);
+require_once '../../vendor/autoload.php';
+require_once '../../config/database.php';
+
+use App\Infrastructure\Dao\TaskDao;
+use App\Infrastructure\Persistence\TaskRepository;
+use App\Presentation\Presenter\Task\CreateTaskPresenter;
+use App\Presentation\Controller\Task\CreateTaskController;
+use App\UseCase\Interactor\Task\CreateTaskUseCase;
+use App\UseCase\Input\Task\CreateTaskInput;
+
+$categoryId = isset($_POST['category_id']) ? intval($_POST['category_id']) : 0;
+$contents = isset($_POST['contents']) ? $_POST['contents'] : '';
+$deadline = isset($_POST['deadline']) ? $_POST['deadline'] : '';
+$userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 
 $errors = [];
-
-// バリデーションチェック
-$category_id = isset($_POST['category_id']) ? $_POST['category_id'] : '';
-$task_name = isset($_POST['task_name']) ? $_POST['task_name'] : '';
-$due_date = isset($_POST['due_date']) ? $_POST['due_date'] : '';
-
-if (empty($category_id)) {
+if (empty($categoryId)) {
   $errors[] = 'カテゴリが選択されていません';
 }
-
-if (empty($task_name)) {
+if (empty($contents)) {
   $errors[] = 'タスク名が入力されていません';
 }
-
-if (empty($due_date)) {
+if (empty($deadline)) {
   $errors[] = '締切日が入力されていません';
 }
-
-if (!empty($errors)) {
-  $_SESSION['errors'] = $errors;
-  header('Location: create.php');
-  exit();
-}
-
-$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
-
-if (is_null($user_id)) {
+if (is_null($userId)) {
   $errors[] = 'ユーザーIDが取得できませんでした。ログインしてください。';
-  $_SESSION['errors'] = $errors;
-  header('Location: create.php');
-  exit();
 }
 
-// タスク登録処理
-$sql = 'INSERT INTO tasks (contents, deadline, category_id, user_id) VALUES (:contents, :deadline, :category_id, :user_id)';
-$statement = $pdo->prepare($sql);
-$statement->bindValue(':contents', $task_name, PDO::PARAM_STR);
-$statement->bindValue(':deadline', $due_date, PDO::PARAM_STR);
-$statement->bindValue(':category_id', $category_id, PDO::PARAM_INT);
-$statement->bindValue(':user_id', $user_id, PDO::PARAM_INT);
-$statement->execute();
+if (empty($errors)) {
+  $pdo = getPdo(); 
+  $taskDao = new TaskDao($pdo);
+  $taskRepository = new TaskRepository($taskDao);
+  $createTaskUseCase = new CreateTaskUseCase($taskRepository);
+  $presenter = new CreateTaskPresenter();
+  $controller = new CreateTaskController($createTaskUseCase, $presenter);
 
-header('Location: ../../../index.php');
-exit();
+  $input = new CreateTaskInput($categoryId, $contents, $deadline, $userId);
+  $controller->handle([
+    'category_id' => $categoryId,
+    'contents' => $contents,
+    'deadline' => $deadline,
+    'user_id' => $userId
+  ]);
+  $output = $createTaskUseCase->execute($input);
+} else {
+  $_SESSION['errors'] = $errors;
+  header('Location: create.php'); 
+  exit();
+}
 ?>

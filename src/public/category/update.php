@@ -1,40 +1,42 @@
-<?php
-session_start();
-$dbUserName = 'root';
-$dbPassword = 'password';
-$pdo = new PDO(
-    'mysql:host=mysql; dbname=todo; charset=utf8',
-    $dbUserName,
-    $dbPassword,
-);
+<?php 
+session_start(); 
+require_once '../../vendor/autoload.php';
+require_once '../../config/database.php';
+
+use App\Infrastructure\Persistence\CategoryRepository;
+use App\UseCase\Interactor\Category\UpdateCategoryUseCase;
+use App\Presentation\Controller\Category\UpdateCategoryController;
+use App\Presentation\Presenter\Category\UpdateCategoryPresenter;
+use App\Infrastructure\Dao\CategoryDao;
+use App\UseCase\Input\Category\UpdateCategoryInput;
+
+$pdo = getPdo();
+$categoryDao = new CategoryDao($pdo);
+$categoryRepository = new CategoryRepository($categoryDao);
 
 $errors = [];
 
-if (!isset($_GET['id'])) {
-  header('Location: index.php');
-}
-$id = $_GET['id'];
-
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $category_name = isset($_POST['category_name']) ? $_POST['category_name'] : '';
+    $category_id = isset($_GET['id']) ? $_GET['id'] : null;
+    $category_name = isset($_POST['category_name']) ? $_POST['category_name'] : '';
 
-  if (empty($_POST['category_name'])) {
-    $errors[] = 'カテゴリー名が入力されていません';
-  }
+    $updateCategoryUseCase = new UpdateCategoryUseCase($categoryRepository);
+    $input = new UpdateCategoryInput($category_id, $category_name);
+    $output = $updateCategoryUseCase->execute($input);
 
-  if (empty($errors)) {
-    $sql = 'UPDATE categories SET name = :name WHERE id = :id';
-    $statement = $pdo->prepare($sql);
-    $statement->bindValue(':name', $category_name, PDO::PARAM_STR);
-    $statement->bindValue(':id', $id, PDO::PARAM_INT);
-    $statement->execute();
-    header('Location: ./index.php');
+    $errors = $output->errors;
+
+    if (empty($errors)) {
+        header('Location: index.php');
+        exit();
+    } else {
+        $_SESSION['errors'] = $errors;
+        header("Location: edit.php?id={$category_id}");
+        exit();
+    }
+} else {
+    $_SESSION['errors'] = ['不正なリクエストです'];
+    header('Location: index.php');
     exit();
-  } else {
-    $_SESSION['errors'] = $errors;
-    header('Location: edit.php?id='. $id);
-    exit();
-  }
-} 
-?>
+}
+

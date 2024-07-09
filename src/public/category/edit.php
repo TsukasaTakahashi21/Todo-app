@@ -1,29 +1,23 @@
 <?php 
 session_start(); 
-$dbUserName = 'root';
-$dbPassword = 'password';
-$pdo = new PDO(
-    'mysql:host=mysql; dbname=todo; charset=utf8',
-    $dbUserName,
-    $dbPassword,
-);
+require_once '../../vendor/autoload.php';
+require_once '../../config/database.php';
 
-if (!isset($_GET['id'])) {
-  header('Location: index.php');
-  exit();
-}
-$id = $_GET['id'];
+use App\Infrastructure\Persistence\CategoryRepository;
+use App\Infrastructure\Dao\CategoryDao;
+use App\Presentation\Controller\Category\EditCategoryController;
+use App\Presentation\Presenter\Category\EditCategoryPresenter;
 
-$sql = 'SELECT * FROM categories WHERE id = :id';
-$statement = $pdo->prepare($sql);
-$statement->bindValue(':id', $id, PDO::PARAM_INT);
-$statement->execute();
-$category = $statement->fetch(PDO::FETCH_ASSOC);
+$pdo = getPdo();
+$categoryDao = new CategoryDao($pdo);
+$categoryRepository = new CategoryRepository($categoryDao);
+$editCategoryPresenter = new EditCategoryPresenter();
+$editCategoryController = new EditCategoryController($categoryRepository, $editCategoryPresenter);
 
-if (!$category) {
-  header('Location: index.php');
-  exit();
-}
+$category_id = isset($_GET['id']) ? (int)$_GET['id'] : null;
+
+$category = $categoryRepository->findById($category_id);
+$data = $editCategoryController->edit(['id' => $category_id]);
 ?>
 
 <!DOCTYPE html>
@@ -37,14 +31,14 @@ if (!$category) {
   <?php if (!empty($_SESSION['errors'])): ?>
     <ul>
       <?php foreach ($_SESSION['errors'] as $error): ?>
-        <li><?php echo $error; ?></li>
+        <li><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></li>
       <?php endforeach; ?>
     </ul>
     <?php unset($_SESSION['errors']); ?>
   <?php endif; ?>
 
-  <form action="./update.php?id=<?php echo $id; ?>" method="post">
-    <input type="text" name="category_name" value="<?php echo $category['name']; ?>">
+  <form action="./update.php?id=<?php echo htmlspecialchars($category->getId(), ENT_QUOTES, 'UTF-8'); ?>" method="post">
+    <input type="text" name="category_name" value="<?php echo htmlspecialchars($category->getName(), ENT_QUOTES, 'UTF-8'); ?>">
     <button type="submit">更新</button>
   </form>
   <a href="index.php">戻る</a>

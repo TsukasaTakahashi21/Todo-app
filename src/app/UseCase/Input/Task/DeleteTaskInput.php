@@ -15,4 +15,3 @@ class DeleteTaskInput
     return $this->taskId;
   }
 }
-

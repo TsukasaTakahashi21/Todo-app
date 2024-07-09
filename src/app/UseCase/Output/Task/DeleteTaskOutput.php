@@ -1,5 +1,4 @@
 <?php
-
 namespace App\UseCase\Output\Task;
 
 use App\Domain\Entity\Task;
@@ -25,4 +24,3 @@ class DeleteTaskOutput
         return $this->errors;
     }
 }
-

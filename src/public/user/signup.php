@@ -25,7 +25,7 @@ unset($_SESSION['errors']);
     <form action="./signup_complete.php" method="post">
       <input type="text" name="user_name" placeholder="User name"><br>
       <input type="email" name="email" placeholder="Email"><br>
-      <input type="password" name="password"><br>
+      <input type="password" name="password" placeholder="Password"><br>
       <input type="password" name="confirm_password" placeholder="パスワード確認"><br>
       <button type="submit">アカウント作成</button>
     </form>

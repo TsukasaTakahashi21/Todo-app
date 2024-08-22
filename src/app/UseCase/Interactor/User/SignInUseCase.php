@@ -29,14 +29,14 @@ class SignInUseCase
 
       $errors[] = 'ユーザーが見つかりません';
       return new SignInOutput($errors);
-    }
+    } 
 
-
-    if ($user->getPasswordHash()->verify($input->password)) {
-      return new SignInOutput($errors); 
-    } else {
+    if (!$user->getPasswordHash()->verify($input->password)) {
       $errors[] = 'メールアドレスまたはパスワードが違います';
       return new SignInOutput($errors);
-    }
+    } 
+    $_SESSION['user_id'] = $user->getId()->getValue();
+    // $_SESSION['user']['id'];
+    return new SignInOutput([]);
   }
 }

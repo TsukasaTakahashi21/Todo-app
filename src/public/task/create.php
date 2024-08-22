@@ -1,8 +1,3 @@
-<?php
-session_start();
-$errors = isset($_SESSION['errors']) ? $_SESSION['errors'] : '';
-unset($_SESSION['errors']);
-?>
 
 <!DOCTYPE html>
 <html lang="ja">
@@ -12,13 +7,14 @@ unset($_SESSION['errors']);
   <title>タスク作成画面</title>
 </head>
 <body>
-  <?php if (!empty($errors)): ?>
-    <ul>
-      <?php foreach ($errors as $error): ?>
-        <li><?php echo $error; ?></li>
-      <?php endforeach; ?>
-    </ul>
-  <?php endif; ?>
+<?php
+  $errors = isset($_SESSION['errors']) ? $_SESSION['errors'] : [];
+  unset($_SESSION['errors']);
+
+  foreach ($errors as $error) {
+    echo '<p>' . htmlspecialchars($error, ENT_QUOTES, 'UTF-8') . '</p>';
+  }
+  ?>
 
   <a href="../category/index.php">カテゴリを追加</a>
   <form action="./store.php" method="post">
@@ -35,10 +31,10 @@ unset($_SESSION['errors']);
       }
       ?>
     </select>
-    <input type="text" name="task_name" placeholder="タスクを追加">
-    <input type="date" name="due_date">
+    <input type="text" name="contents" placeholder="タスクを追加">
+    <input type="date" name="deadline">
     <button type="submit">追加</button>
   </form>
   <a href="../index.php">戻る</a>
 </body>
-</html>l
+</html>
